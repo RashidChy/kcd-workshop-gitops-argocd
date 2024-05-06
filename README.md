@@ -61,11 +61,19 @@ kubectl port-forward -n argocd svc/argocd-server 8080:80
 
 ## Get Started
 
-### Task 1 - Deploy Application ArgoCD
+### Task 1 - Deploy Application
 
-Create a new application from ArgoCD UI and deploy the application.
+Create a new application from ArgoCD UI and deploy the application. [Check here](https://github.com/shaekhhasanshoron/kcd-workshop-gitops-argocd/tree/main/manifests/demo-app) for the application descriptors.
 
-### Task 2 - Update the Image Deploy Application ArgoCD
+### Task 2 - Update the Image Deploy Application
 
+Update the Image of the descriptors and Commit changes.
+
+
+### Task 3 - On Board an Application using Helm
+
+* Chart Repo - "https://charts.bitnami.com/bitnami"
+* Chart Name - "wildfly"
+* Target Version - "19.1.1"
 
 
