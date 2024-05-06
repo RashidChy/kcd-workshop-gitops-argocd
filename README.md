@@ -76,4 +76,11 @@ Update the Image of the descriptors and Commit changes.
 * Chart Name - "wildfly"
 * Target Version - "19.1.1"
 
+----------------------------------------------------------------
+
+
+
+* Chart Repo - "https://bitnami-labs.github.io/sealed-secrets"
+* Chart Name - "sealed-secrets"
+* Target Version - "1.16.1"
 
