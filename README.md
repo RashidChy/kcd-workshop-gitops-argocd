@@ -23,6 +23,8 @@ To follow along with this workshop, you will require a basic understanding of th
 
 If you full-fill all the requirements, then you are good to go.
 
+## Inventory
+
 ## Setup Environment
 
 Let's start with setting our environment. To start working with [ArgoCD](https://argo-cd.readthedocs.io/en/stable/). 
@@ -84,11 +86,12 @@ kubectl port-forward -n argocd svc/argocd-server 8080:80
 
 Login with the username "admin" and password admin password from secret. 
 
-
 ## Install ArgoCD CLI
 
 Install ArgoCD Cli tool to connect argocd from terminal. The installation guidelines for each operating system are 
 documented [here](https://argo-cd.readthedocs.io/en/stable/cli_installation/)
+
+You can found all the command reference of ArgoCD Cli from [here](https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd/).
 
 ## Login to ArgoCD from CLI
 
@@ -113,44 +116,163 @@ argocd cluster list
 
 ## Let's Get Started
 
-### Task 1 - Deploy Application
+### Task - Deploy Application
 
 Create a new application from ArgoCD UI and deploy the application. [Check here](https://github.com/shaekhhasanshoron/kcd-workshop-gitops-argocd/tree/main/manifests/demo-app) for the application descriptors.
 
-https://github.com/shaekhhasanshoron/kcd-workshop-gitops-argocd
+We are going to deploy [kcd-demo-app](https://github.com/shaekhhasanshoron/kcd-demo-app) in ArgoCD.
 
-### Task 2 - Update the Image Deploy Application
+```
+REPO URL: https://github.com/shaekhhasanshoron/kcd-demo-app
+PATH: kubernetes/manifests
+REVISION: HEAD
+```
 
-Update the Image of the descriptors and Commit changes.
+### Task - Automated vs Manual Sync
+
+In manual sync we need to manually sync the updates or commits. ArgoCD supports both of the sync system. However, If you consider GitOps principles, 
+application it needs to automated. 
 
 
-### Task 3 - On Board an Application using Helm
+### Task - Update manifests
 
-* Chart Repo - "https://charts.bitnami.com/bitnami"
-* Chart Name - "wildfly"
-* Target Version - "19.1.1"
+We will update the manifests to check the output. We will update it from Git also from Cluster it-self. 
+We will update the configurations inside the server directly and we will see that ArgoCD will alter that change and move it to
+the desired state.
 
 
-### Task - Deploy application in another kubernetes cluster
-#### Create a new Kubernetes cluster
+### Task - Redeploy and Rollback to Previous Deployment
+
+Let us see how the re-deploy and rollback feature.
+
+### Task - Create a new Project
+
+We will create a new project and add another application to that newly created project.
+
+### Task - Adding Roles to Project
+
+We will set different roles to project.
+
+### Task - Add a Git repositories 
+
+We will add a git repo in ArgoCD git repo list. We will add [kcd-notify-app](https://github.com/shaekhhasanshoron/kcd-notify-app) repo. This is a private repository,
+we will need to attach the creds to it. Run the following command. Here, you will attach token instead of password.
+```
+argocd repo get https://github.com/shaekhhasanshoron/kcd-notify-app --username <USERNAME> --password <PASSWORD>
+```
+
+Now check the repo list.
+```
+argocd repo list
+```
+
+### Task - Deploy a new Application in Project
+
+Create a new application from ArgoCD UI and deploy the application. [Check here](https://github.com/shaekhhasanshoron/kcd-workshop-gitops-argocd/tree/main/manifests/demo-app) for the application descriptors.
+
+We are going to deploy [kcd-notify-app](https://github.com/shaekhhasanshoron/kcd-notify-app) in ArgoCD.
+
+```
+REPO URL: https://github.com/shaekhhasanshoron/kcd-notify-app
+PATH: kubernetes/manifests
+REVISION: HEAD
+```
+
+Here we will use ArgoCD CLI to deploy.
+
+```
+argocd app create argocd/applications/kcd-notify.yaml
+```
+
+### Task - Hooks
+
+Hooks can be used while synchronizing your application with ArgoCD. For details [click here](https://argo-cd.readthedocs.io/en/stable/user-guide/resource_hooks/)
+
+Here just to show how does it work, we will create a new file under the manifest folder and add the following code. We are just
+notify a message to notify service api.
+
+```
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: kcd-notify-config-
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  template:
+    spec:
+      containers:
+        - name: kcd-notify
+          image: curlimages/curl
+          command:
+            - "curl"
+            - "-X"
+            - "POST"
+            - "http://kcd-notify.demo:8080/api/notify?message=Synched"
+      restartPolicy: Never
+  backoffLimit: 2
+```
+
+### Task - Removing Application
+
+We will remove the application.
+
+```
+argocd app delete <app name>
+```
+
+### Task - Create a new Helm Application from Public Helm Repo
+
+We will create a new application from a public helm repository. We will deploy [WildFly](https://www.wildfly.org/) app server from [https://charts.bitnami.com/bitnami](https://charts.bitnami.com/bitnami) helm repo.
+We will update parameters and deploy the applications. 
+
+```
+REPO URL : https://charts.bitnami.com/bitnami
+CHART NAME: wildfly
+VERSION: 19.1.1
+```
+
+### Task - Create a Helm Application from Git Repo with custom Values
+
+We have already extracted the [WildFly](https://www.wildfly.org/) app server chart from [https://charts.bitnami.com/bitnami](https://charts.bitnami.com/bitnami) public repo.
+View the app repository, [kcd-wildfly](https://github.com/shaekhhasanshoron/kcd-wildfly).
+
+```
+REPO URL: https://github.com/shaekhhasanshoron/kcd-wildfly
+PATH: helm/wildfly
+REVISION: HEAD
+```
+
+### Task - Take Backup and Restore
+
+We will take a backup of the current state. Run the following command.
+
+```
+argocd -n argocd admin export > backup.yaml
+```
+
+We will update some changes and then import the backup file and check what happens.
+
+```
+argocd -n argocd admin import - < backup.yaml
+```
+
+### Task - Create another new cluster
+
+We will use [kind](https://kind.sigs.k8s.io/) to create another cluster on your local machine. Run the following command,
 
 ```
 kind create cluster --name kcd-cluster-two
 ```
 
-#### Add new cluster to ArgoCD
+### Task - Add new cluster to ArgoCD
 
-Check the current cluster list
+We will add the newly created kubernetes cluster to the existing ArgoCD. Lets check the current cluster list and add the new one.
 
 ```
 argocd cluster list
-```
-
-We will be using ArgoCD cli to attach new cluster. You need to check the current contexts to connect with a new cluster.
-
-Run the command to check the cluster contexts.
-```
-kubectl config get-contexts
 ```
 
 Now run the following command to attach a new cluster to argocd. Replace the context with actual context name.
@@ -158,6 +280,103 @@ Now run the following command to attach a new cluster to argocd. Replace the con
 argocd cluster add <context> --name <name> -y
 ```
 
-Since we are using our local machines, the above `argocd cluster add` may not work properly because the argocd be 
+Since we are using our local machines, the above `argocd cluster add` may not work properly because the argocd be
 able to connect to the new cluster using 127.0.0.1 IP. We need to change it inside the `kube cluster` file.
 
+### Task - Deploy Application in multiple clusters using ApplicationSet
+
+[ApplicationSet](https://argo-cd.readthedocs.io/en/stable/user-guide/application-set/) provides you the feature to deploy and manage you application into multiple cluster. For Further details [click here](https://argo-cd.readthedocs.io/en/stable/user-guide/application-set/).
+
+Here we deploy open source [Argo-CD](https://github.com/argoproj/argo-cd.git) application to multiple cluster at once.
+
+```
+argocd appset create <appset filename>
+```
+
+Now check the appset list
+
+```
+argocd appset list
+```
+
+### Task - Remove ApplicationSet
+
+```
+argocd appset delete <appset name>
+```
+
+### Task - Create a new user
+
+You need to update the `argocd-cm` configmap and add user data. 
+
+```
+kubectl edit cm -n argocd argocd-cm
+```
+
+Add the following code under `data` and save it.
+
+```
+  accounts.shoron: apiKey, login
+  accounts.shoron.enabled: "true"
+```
+
+Check User list
+
+```
+argocd account list
+```
+
+### Task - Update the user password
+
+Since initially newly created your will not have any password, we have to add the password for the new user. 
+
+```
+argocd account update-password \
+  --account shoron \
+  --current-password $(kubectl get secrets/argocd-initial-admin-secret -n argocd --template={{.data.password}} | base64 -d) \
+  --new-password Hello@123
+```
+
+
+### Task - Provide Permission: RBAC
+
+By default, new user does not have any permission. You need to provide the permissions to user. 
+You need to add user permission in a `argocd-rbac-cm` configmap.
+
+```
+kubectl edit cm -n argocd argocd-rbac-cm
+```
+
+Here is the following format to update permission for user.
+
+`p, <role/user/group>, <resource>, <action>, <appproject>/<object>, <allow/deny>`
+
+Now edit `argocd-rbac-cm` configmap and  add the following code under `data` and save it.
+
+```
+  policy.csv: |
+    p, shoron, applications, *, default/*, allow
+  policy.default: read:readonly
+```
+
+You can add several permissions to it.
+
+```
+  policy.csv: |
+    p, shoron, applications, *, default/*, allow
+    p, shoron, clusters, get, *, allow
+    p, shoron, projects, get, default, allow
+    p, shoron, repositories, *, *, allow
+```
+
+
+### Task - Disable user
+
+You need to update the `argocd-cm` configmap and add user data.
+
+```
+kubectl edit cm -n argocd argocd-cm
+```
+
+## Thank you
+Please visit [Klovercloud.com](https://klovercloud.com/).  

@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: guestbook
+spec:
+  generators:
+    - list:
+        elements:
+          - appName: app-guestbook-dev
+            appRepoName: engineering-dev
+            cluster: cluster-two
+            clusterUrl: https://172.19.0.2:30036
+            namespace: guestbook-dev
+          - appName: app-guestbook-stag
+            appRepoName: engineering-dev
+            cluster: cluster-two
+            clusterUrl: https://172.19.0.2:30036
+            namespace: guestbook-stag
+          - appName: app-guestbook-prod
+            appRepoName: engineering-prod
+            cluster: cluster-one
+            clusterUrl: https://kubernetes.default.svc
+            namespace: guestbook-prod
+  template:
+    metadata:
+      name: '{{appName}}-guestbook'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/argoproj/argo-cd.git
+        targetRevision: HEAD
+        path: applicationset/examples/list-generator/guestbook/{{appRepoName}}
+      destination:
+        server: '{{clusterUrl}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=background

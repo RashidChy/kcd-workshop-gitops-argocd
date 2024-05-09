@@ -1,22 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: demo-app
+  name: kcd-demo-app
 spec:
   destination:
     name: ''
-    namespace: kcd-demo
+    namespace: demo
     server: 'https://kubernetes.default.svc'
   source:
-    path: manifests/demo-app
-    repoURL: 'https://github.com/shaekhhasanshoron/kcd-workshop-gitops-argocd.git'
+    path: kubernetes/manifests
+    repoURL: 'https://github.com/shaekhhasanshoron/kcd-demo-app'
     targetRevision: HEAD
   sources: []
   project: default
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+    automated: null
     syncOptions:
       - CreateNamespace=true
-      - PrunePropagationPolicy=background
